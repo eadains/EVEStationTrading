@@ -3,6 +3,19 @@ import requests
 from sqlalchemy import create_engine
 
 
+def create_tables(SQL_USER, SQL_PASS, SQL_DATABASE):
+    """
+    Creates required tables in database. Assumes localhost server location and using mysql-connector
+    SQL_USER = Database username
+    SQL_PASS = Database account password
+    SQL_DATABASE = Existing database name to write tables into
+    """
+    engine = create_engine('mysql+mysqlconnector://%s:%s@localhost/%s' % (SQL_USER, SQL_PASS, SQL_DATABASE))
+    engine.execute('CREATE TABLE items (item_id INT(11), name VARCHAR(75) PRIMARY KEY (item_id))')
+    engine.execute('CREATE TABLE prices (item_id INT(11), date DATE, orders INT(11), volume BIGINT(20),'
+                   'low DECIMAL(20,2), high DECIMAL(20,2), FOREIGN KEY (item_id) REFERENCES items(item_id)')
+
+
 def update_item_list(SQL_USER, SQL_PASS, SQL_DATABASE):
     """
     Fetches all marketable items from API, drops any info currently in table, then inserts API data.
