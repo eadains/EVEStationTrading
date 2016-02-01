@@ -2,7 +2,16 @@ import pandas as pd
 from sqlalchemy import create_engine
 
 
-def calc_scores(SQL_USER, SQL_PASS, SQL_DATABASE, wallet, broker_fee, sales_tax, item_id):
+def init_function(SQL_USER, SQL_PASS, SQL_DATABASE):
+    """
+    Sets global engine variable for use in the calc scores function. Should be used as intializer function in
+    multiprocessing.
+    """
+    global engine
+    engine = create_engine('mysql+mysqlconnector://%s:%s@localhost/%s' % (SQL_USER, SQL_PASS, SQL_DATABASE))
+
+
+def calc_scores(wallet, broker_fee, sales_tax, item_id):
     """
     Calculates profitability scores for specified item_id. Returns Pandas dataframe containing item_id and
     its score. The profit factor is calculated with
@@ -17,7 +26,6 @@ def calc_scores(SQL_USER, SQL_PASS, SQL_DATABASE, wallet, broker_fee, sales_tax,
     # TODO: Fetch wallet automatically
     # TODO: Fetch expenses automatically
     # TODO: Fetch Margin level automatically
-    engine = create_engine('mysql+mysqlconnector://%s:%s@localhost/%s' % (SQL_USER, SQL_PASS, SQL_DATABASE))
     frame = pd.read_sql('SELECT * FROM prices WHERE item_id=%d' % item_id, engine,
                         index_col='date', parse_dates=['date'])
     frame['high'] = frame['high'] - (frame['high'] * broker_fee * sales_tax)
@@ -31,7 +39,8 @@ def calc_scores(SQL_USER, SQL_PASS, SQL_DATABASE, wallet, broker_fee, sales_tax,
         print 'Item %d has no stored market data. Skipping.' % item_id
 
 
-def calc_portfolio(weight_frame):
+def calc_portfolio(weight_frame, margin_percent):
     """
-    Calculates
+    Calculates how many of each item to buy, using the dataframe created by calc_scores. Returns dataframe with item id,
+    name of item, escrow amount, and number to buy.
     """
